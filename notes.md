@@ -98,13 +98,12 @@ Y = number of the group
 #### Steps
 
  - Connect E1 TUX3 and E1 TUX4 to the switch 
-     - gnuY3E1 and gnuY4E1 to any port on the switch
+     - gnuY3E1 and gnuY4E1 to any port 3 and 4 on the switch
  - Configure eth1interface of tuxY3 and eth1 interface of tuxY4 using ifconfig and route commands
      - ifconfig eth1 172.16.Y0.1/24 on tuxY3
      - ifconfig eth1 172.16.Y0.254/24 on tuxY4
  - Open Wireshark and ping from tuxY3 to tuxY4 (ping 172.16.Y0.254)
-
-00:c0:df:08:d5:9a
+     ![alt text](img/exp1.png)
 
 #### Questions
 
@@ -113,7 +112,7 @@ Y = number of the group
 #### Steps
 
  - Connect and configure E1 of tuxY2 and register its IP and MAC addresses
-     - gnuY2E1 to any port on the switch and gnuY2S0 to cisco, as well as the console
+     - gnuY2E1 to port 2 on the switch and gnuY2S0 to cisco, as well as the console
      - ifconfig eth1 172.16.Y1.1/24
      - open GTKTerm and change the baud rate to 115200
          ```bash
@@ -129,19 +128,21 @@ Y = number of the group
      ```
      - remove the ports from the default bridge
      ```bash
-     > /interface bridge port remove [find interface=ether1] 
+     > /interface bridge port remove [find interface=ether3] 
+     > /interface bridge port remove [find interface=ether4]
      > /interface bridge port remove [find interface=ether2]
-     > /interface bridge port remove [find interface=ether3]
     ```
      - add the ports to the bridges
      ```bash
-     > /interface bridge port add bridge=bridgeY0 interface=ether1
-     > /interface bridge port add bridge=bridgeY0 interface=ether2
-     > /interface bridge port add bridge=bridgeY1 interface=ether3
+     > /interface bridge port add bridge=bridgeY0 interface=ether3
+     > /interface bridge port add bridge=bridgeY0 interface=ether4
+     > /interface bridge port add bridge=bridgeY1 interface=ether2
      ```
 
  - Start the capture at tuxY3.eth1
      - ping from tuxY3 to tuxY4 and tuxY2
+     ![alt text](img/exp2a.png)
+     ![alt text](img/exp2b.png)
 
 #### Questions
 
@@ -149,14 +150,50 @@ Y = number of the group
 
 #### Steps
 
- - Make the Tux 4 a router
-     - Ligar eth1 do Tux54 à porta 4 do switch. Configurar eth1 do Tux54
+ - Make the tuxY4 a router
+     - connect eth2 of tuxY4 to port 12 on the switch
+     - configure eth2 of tuxY4
      ```bash
-     ifconfig eth1 up
-     ifconfig eth1 172.16.51.253/24
+     ifconfig eth2 up
+     ifconfig eth2 172.16.51.253/24
      ```
-
-
+     - enable IP forwarding and disable ICMP
+     ```bash
+        echo 1 > /proc/sys/net/ipv4/ip_forward
+        echo 0 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+     ```
+ - Check MAC and IP addresses
+     ```bash
+        ifconfig eth2
+     ```
+ - Reconfigure the routes so that tuxY3 can reach tuxY2
+     - tuxY2
+     ```bash
+        route add -net 172.16.Y0.0/24 gw 172.16.Y1.253
+    ```
+     - tuxY3
+     ```bash
+        route add -net 172.16.Y1.0/24 gw 172.16.Y0.254
+     ```
+ - Check Routes
+     ```bash
+        route -n
+     ```
+ - Start capture at tuxY3
+     - ping from tuxY3
+     ```bash
+        ping 172.16.Y0.254
+        ping 172.16.Y1.253
+        ping 172.16.Y1.1
+     ```
+ - Start capture in tuxY4; use 2 instances of Wireshark, one per network interface
+ - Clean the ARP tables in the 3 tuxes
+ - In tuxY3, ping tuxY2 for a few seconds
+     ```bash
+        ping 172.16.Y1.1
+     ```
+ - Stop captures in tuxY4 and save logs
+ 
 ## Theory
 
 ### TCP/IP
