@@ -87,6 +87,22 @@ RETR pub/somefile.txt
 ```
 Observe the server responses and how connections are managed.
 
+## Making the protocol
+
+### Step 1: Understand the FTP Protocol
+FTP operates over two connections:
+
+Control Connection: Manages commands and responses (uses port 21 by default).
+Data Connection: Transfers file data. In passive mode, the server provides the client with a specific port for the data connection.
+Key Commands:
+
+USER and PASS: Authenticate.
+PASV: Switch to passive mode.
+RETR: Retrieve a file.
+Familiarize yourself with the response codes in RFC959 (e.g., 220 for service ready, 530 for authentication required).
+
+
+
 
 
 ## Part 2: Configuration and Study of a Computer Network
@@ -327,6 +343,17 @@ Y = number of the group
 
     - **Why?**
      - MAC addresses change at each hop because Ethernet is a Layer 2 protocol, while IP remains unchanged since it operates at Layer 3.
+
+### Experiment 4: Configure a Commercial Router and Implement NAT
+
+#### Steps
+
+ - Connect the eth1 of the router to the PY.12 port and eth2 to the switch, bridge Y1
+     ```bash
+        /ip address add address=172.16.1.Y9/24 interface=ether1
+        /ip address add address=172.16.Y1.254/24 interface=ether2
+    ```
+    
 
 ## Theory
 
