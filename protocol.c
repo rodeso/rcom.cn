@@ -150,48 +150,62 @@ int read_response(int sockfd, char *buffer, size_t buffer_size) {
 int authenticate(int sockfd, char *user, char *password) {
     char buffer[512];
 
-    // Send USER command
+    // Step 1: Read and discard the initial welcome message
+    int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+    if (bytes_received < 0) {
+        perror("recv welcome message");
+        return ERR_AUTH_FAIL;
+    }
+    buffer[bytes_received] = '\0'; // Null-terminate the response
+    printf("Welcome Message: %s\n", buffer);
+
+    // Step 2: Send USER command
     sprintf(buffer, "USER %s\r\n", user);
     if (send(sockfd, buffer, strlen(buffer), 0) < 0) {
         perror("send USER");
-        return -1;
+        return ERR_AUTH_FAIL;
     }
 
-    // Read USER response
-    if (read_response(sockfd, buffer, sizeof(buffer)) < 0) {
-        fprintf(stderr, "Failed to read response for USER command\n");
-        return -1;
+    // Step 3: Read response to USER command
+    bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+    if (bytes_received < 0) {
+        perror("recv USER response");
+        return ERR_AUTH_FAIL;
     }
+    buffer[bytes_received] = '\0'; // Null-terminate the response
     printf("USER Response: %s\n", buffer);
 
     // Check for "331" code (Password required)
     if (strstr(buffer, "331") == NULL) {
         fprintf(stderr, "Unexpected USER response: %s\n", buffer);
-        return -1;
+        return ERR_AUTH_FAIL;
     }
 
-    // Send PASS command
+    // Step 4: Send PASS command
     sprintf(buffer, "PASS %s\r\n", password);
     if (send(sockfd, buffer, strlen(buffer), 0) < 0) {
         perror("send PASS");
-        return -1;
+        return ERR_AUTH_FAIL;
     }
 
-    // Read PASS response
-    if (read_response(sockfd, buffer, sizeof(buffer)) < 0) {
-        fprintf(stderr, "Failed to read response for PASS command\n");
-        return -1;
+    // Step 5: Read response to PASS command
+    bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+    if (bytes_received < 0) {
+        perror("recv PASS response");
+        return ERR_AUTH_FAIL;
     }
+    buffer[bytes_received] = '\0'; // Null-terminate the response
     printf("PASS Response: %s\n", buffer);
 
     // Check for "230" code (Login successful)
     if (strstr(buffer, "230") == NULL) {
         fprintf(stderr, "Authentication failed: %s\n", buffer);
-        return -1;
+        return ERR_AUTH_FAIL;
     }
 
-    return 0; // Authentication successful
+    return ERR_SUCCESS; // Authentication successful
 }
+
 
 
 
