@@ -210,8 +210,6 @@ int enter_passive_mode(int sockfd, char *ip, int *port) {
     return ERR_PASV_FAIL;
 }
 
-
-
 // Request the file from the server
 int request_file(int sockfd, char *resource) {
     char buffer[MAX_LENGTH];
@@ -228,10 +226,30 @@ int download_file(int sockfd, char *file) {
 
     char buffer[1024];
     int bytes_received;
+    long total_bytes = 0;
+
+    // Spinner characters
+    char spinner[] = "|/-\\";
+    int spinner_index = 0;
+
+    printf("Downloading...\n");
+
     while ((bytes_received = recv(sockfd, buffer, sizeof(buffer), 0)) > 0) {
         fwrite(buffer, 1, bytes_received, fp);
+        total_bytes += bytes_received;
+
+        // Display progress with spinner and bytes transferred
+        printf("\r[%c] %ld bytes downloaded", spinner[spinner_index], total_bytes);
+        fflush(stdout); // Force update of the console
+
+        // Update spinner
+        spinner_index = (spinner_index + 1) % 4;
     }
     fclose(fp);
+
+    // Complete the progress bar
+    printf("\r[✔] %ld bytes downloaded\n", total_bytes);
+
     return ERR_SUCCESS;
 }
 
