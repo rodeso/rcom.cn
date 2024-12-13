@@ -60,13 +60,13 @@ void handle_error(ErrorCode code, const char *msg) {
 
 // Parse the URL into its components
 int parse_url(const char *input, URL *url) {
-    // Initialize default user and password
-    strcpy(url->user, "anonymous");
-    strcpy(url->password, "anonymous");
+    // Initialize the user and password fields with empty strings
+    memset(url->user, 0, MAX_LENGTH);
+    memset(url->password, 0, MAX_LENGTH);
 
     // Check for the "ftp://" prefix
     if (strncmp(input, "ftp://", 6) != 0) {
-        handle_error(ERR_PARSE_FAIL, "Invalid URL");
+        return -1; // Invalid URL
     }
 
     const char *url_start = input + 6; // Skip "ftp://"
@@ -74,7 +74,7 @@ int parse_url(const char *input, URL *url) {
     const char *slash = strchr(url_start, '/');
 
     if (!slash) {
-        handle_error(ERR_PARSE_FAIL, "No path found.");
+        return -1; // No path found
     }
 
     // Parse user and password if present
@@ -85,19 +85,23 @@ int parse_url(const char *input, URL *url) {
             strncpy(url->user, url_start, colon - url_start);
             strncpy(url->password, colon + 1, at_sign - colon - 1);
         } else {
-            // No password provided
+            // No password provided, only extract user
             strncpy(url->user, url_start, at_sign - url_start);
         }
         url_start = at_sign + 1; // Move past '@'
+    } else {
+        // If no user/password specified, set them to "anonymous"
+        strcpy(url->user, "anonymous");
+        strcpy(url->password, "anonymous");
     }
 
-    // Extract host
+    // Extract host (everything between '@' and '/')
     strncpy(url->host, url_start, slash - url_start);
 
-    // Extract resource
+    // Extract resource (path after '/')
     strcpy(url->resource, slash + 1);
 
-    // Extract file name from resource
+    // Extract file name from resource (everything after the last '/')
     const char *last_slash = strrchr(url->resource, '/');
     if (last_slash) {
         strcpy(url->file, last_slash + 1);
@@ -108,14 +112,22 @@ int parse_url(const char *input, URL *url) {
     // Resolve hostname to IP
     struct hostent *host_info = gethostbyname(url->host);
     if (!host_info) {
-       handle_error(ERR_PARSE_FAIL, "Failed to resolve hostname.");
+        return -1; // Failed to resolve hostname
     }
     strcpy(url->ip, inet_ntoa(*(struct in_addr *)host_info->h_addr));
 
     return 0; // Success
 }
 
-
+// Function to print parsed URL details
+void print_url_info(const URL* url) {
+    printf("User: %s\n", url->user);
+    printf("Password: %s\n", url->password);
+    printf("Host: %s\n", url->host);
+    printf("Resource Path: %s\n", url->resource);
+    printf("File Name: %s\n", url->file);
+    printf("Server IP: %s\n", url->ip);
+}
 
 // Create a socket and connect to the serve
 int create_socket(char *ip, int port) {
@@ -137,7 +149,7 @@ int create_socket(char *ip, int port) {
 // Read the server response
 int read_response(int sockfd, char *buffer, size_t buffer_size) {
     memset(buffer, 0, buffer_size); // Clear the buffer
-    char temp[512];                // Temporary buffer for each line
+    char temp[MAX_LENGTH];                // Temporary buffer for each line
     int total_bytes = 0;
     int is_multiline = 0;
     char code[4] = {0};
@@ -181,7 +193,7 @@ int read_response(int sockfd, char *buffer, size_t buffer_size) {
 
 // Authenticate the user with the server
 int authenticate(int sockfd, char *user, char *password) {
-    char buffer[512];
+    char buffer[MAX_LENGTH];
 
     // Step 1: Read and discard the initial welcome message
     int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
@@ -312,7 +324,8 @@ int main(int argc, char *argv[]) {
         handle_error(ERR_PARSE_FAIL, "Failed to parse URL.");
     }
 
-    printf("Connecting to %s (%s)...\n", url.host, url.ip);
+    // Print the parsed URL details
+    print_url_info(&url);
 
     int control_socket = create_socket(url.ip, FTP_PORT);
     if (control_socket < 0) {
@@ -351,7 +364,7 @@ int main(int argc, char *argv[]) {
 
     // Send QUIT command to the server before closing control socket
     send(control_socket, "QUIT\r\n", 6, 0);
-    char buffer[512];
+    char buffer[MAX_LENGTH];
     recv(control_socket, buffer, sizeof(buffer), 0);
     printf("Server response: %s\n", buffer);
 
