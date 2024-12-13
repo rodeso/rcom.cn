@@ -89,18 +89,47 @@ Observe the server responses and how connections are managed.
 
 ## Making the protocol
 
-### Step 1: Understand the FTP Protocol
-FTP operates over two connections:
+### Key Goals for the FTP Client:
 
-Control Connection: Manages commands and responses (uses port 21 by default).
-Data Connection: Transfers file data. In passive mode, the server provides the client with a specific port for the data connection.
-Key Commands:
+ - Parse the FTP URL to extract components such as user, password, host, resource path, and file name.
+ - Establish a control connection using a socket to communicate with the FTP server.
+ - Authenticate with the server using the provided username and password.
+ - Switch to passive mode to determine the IP and port for the data connection.
+ - Request the file and receive it over the data connection.
+ - Save the file locally while maintaining error handling.
 
-USER and PASS: Authenticate.
-PASV: Switch to passive mode.
-RETR: Retrieve a file.
-Familiarize yourself with the response codes in RFC959 (e.g., 220 for service ready, 530 for authentication required).
+### Steps to Implement
+1. URL Parsing (parse_url)
 
+    Use sscanf or a similar method to extract user, password, host, and path components.
+    Convert the host into an IP address using gethostbyname.
+
+2. Socket Creation (create_socket)
+
+    Use the socket() function to create a socket.
+    Use connect() to establish a connection to the server.
+
+3. Authentication (authenticate)
+
+    Send FTP commands like USER <username> and PASS <password> using send() and recv().
+
+4. Passive Mode (enter_passive_mode)
+
+    Send the PASV command to the server.
+    Parse the server's response to extract the IP address and port.
+
+5. File Request (request_file)
+
+    Send the RETR <file> command to the server.
+
+6. File Download (download_file)
+
+    Use the data connection to receive the file contents.
+    Save the received data to a file.
+
+7. Error Handling (handle_error)
+
+    Implement meaningful error messages for each step to aid debugging.
 
 
 
