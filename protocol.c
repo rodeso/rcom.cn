@@ -275,6 +275,7 @@ int request_file(int sockfd, char *resource) {
     sprintf(buffer, "RETR %s\r\n", resource);
     send(sockfd, buffer, strlen(buffer), 0);
     recv(sockfd, buffer, sizeof(buffer), 0);
+    printf("Server response: %s\n", buffer);
     return strstr(buffer, "150") ? ERR_SUCCESS : ERR_RETR_FAIL;
 }
 
