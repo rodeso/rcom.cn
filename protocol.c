@@ -66,7 +66,7 @@ int parse_url(const char *input, URL *url) {
 
     // Check for the "ftp://" prefix
     if (strncmp(input, "ftp://", 6) != 0) {
-        return -1; // Invalid URL
+        handle_error(ERR_PARSE_FAIL, "Invalid URL");
     }
 
     const char *url_start = input + 6; // Skip "ftp://"
@@ -74,7 +74,7 @@ int parse_url(const char *input, URL *url) {
     const char *slash = strchr(url_start, '/');
 
     if (!slash) {
-        return -1; // No path found
+        handle_error(ERR_PARSE_FAIL, "No path found.");
     }
 
     // Parse user and password if present
@@ -108,7 +108,7 @@ int parse_url(const char *input, URL *url) {
     // Resolve hostname to IP
     struct hostent *host_info = gethostbyname(url->host);
     if (!host_info) {
-        return -1; // Failed to resolve hostname
+       handle_error(ERR_PARSE_FAIL, "Failed to resolve hostname.");
     }
     strcpy(url->ip, inet_ntoa(*(struct in_addr *)host_info->h_addr));
 
@@ -134,21 +134,65 @@ int create_socket(char *ip, int port) {
     return sockfd;
 }
 
+// Read the server response
+int read_response(int sockfd, char *buffer, size_t buffer_size) {
+    memset(buffer, 0, buffer_size); // Clear buffer
+    int bytes_received = recv(sockfd, buffer, buffer_size - 1, 0); // Read response
+    if (bytes_received < 0) {
+        perror("recv");
+        return -1;
+    }
+    buffer[bytes_received] = '\0'; // Null-terminate the response
+    return bytes_received;
+}
 
 // Authenticate the user with the server
 int authenticate(int sockfd, char *user, char *password) {
-    char buffer[MAX_LENGTH];
+    char buffer[512];
+
+    // Send USER command
     sprintf(buffer, "USER %s\r\n", user);
-    send(sockfd, buffer, strlen(buffer), 0);
-    recv(sockfd, buffer, sizeof(buffer), 0);
+    if (send(sockfd, buffer, strlen(buffer), 0) < 0) {
+        perror("send USER");
+        return -1;
+    }
 
+    // Read USER response
+    if (read_response(sockfd, buffer, sizeof(buffer)) < 0) {
+        fprintf(stderr, "Failed to read response for USER command\n");
+        return -1;
+    }
+    printf("USER Response: %s\n", buffer);
+
+    // Check for "331" code (Password required)
+    if (strstr(buffer, "331") == NULL) {
+        fprintf(stderr, "Unexpected USER response: %s\n", buffer);
+        return -1;
+    }
+
+    // Send PASS command
     sprintf(buffer, "PASS %s\r\n", password);
-    send(sockfd, buffer, strlen(buffer), 0);
-    recv(sockfd, buffer, sizeof(buffer), 0);
+    if (send(sockfd, buffer, strlen(buffer), 0) < 0) {
+        perror("send PASS");
+        return -1;
+    }
 
-    if (strstr(buffer, "230") != NULL) return ERR_SUCCESS;
-    return ERR_AUTH_FAIL;
+    // Read PASS response
+    if (read_response(sockfd, buffer, sizeof(buffer)) < 0) {
+        fprintf(stderr, "Failed to read response for PASS command\n");
+        return -1;
+    }
+    printf("PASS Response: %s\n", buffer);
+
+    // Check for "230" code (Login successful)
+    if (strstr(buffer, "230") == NULL) {
+        fprintf(stderr, "Authentication failed: %s\n", buffer);
+        return -1;
+    }
+
+    return 0; // Authentication successful
 }
+
 
 
 // Enter passive mode and get the IP and port for data transfer
@@ -193,7 +237,7 @@ int download_file(int sockfd, char *file) {
 
 
 // Main function to download a file from an FTP server
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[]) {    
     if (argc != 2) {
         handle_error(ERR_PARSE_FAIL, "Usage: ./download ftp://[<user>:<password>@]<host>/<url-path>");
     }
