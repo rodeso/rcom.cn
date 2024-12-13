@@ -136,15 +136,48 @@ int create_socket(char *ip, int port) {
 
 // Read the server response
 int read_response(int sockfd, char *buffer, size_t buffer_size) {
-    memset(buffer, 0, buffer_size); // Clear buffer
-    int bytes_received = recv(sockfd, buffer, buffer_size - 1, 0); // Read response
-    if (bytes_received < 0) {
-        perror("recv");
-        return -1;
+    memset(buffer, 0, buffer_size); // Clear the buffer
+    char temp[512];                // Temporary buffer for each line
+    int total_bytes = 0;
+    int is_multiline = 0;
+    char code[4] = {0};
+
+    while (1) {
+        // Receive data from the server
+        int bytes_received = recv(sockfd, temp, sizeof(temp) - 1, 0);
+        if (bytes_received < 0) {
+            perror("recv");
+            return -1; // Error in receiving
+        }
+        temp[bytes_received] = '\0'; // Null-terminate the received data
+
+        // Append the received data to the main buffer
+        strncat(buffer, temp, buffer_size - strlen(buffer) - 1);
+        total_bytes += bytes_received;
+
+        // Determine if this is a multi-line response
+        if (total_bytes == bytes_received) { // First recv call
+            strncpy(code, buffer, 3); // Extract the response code
+            code[3] = '\0';
+            if (buffer[3] == '-') {
+                is_multiline = 1; // Multi-line response detected
+            }
+        }
+
+        // Check if the final line has been received
+        char *last_line = strrchr(buffer, '\n');
+        if (last_line) {
+            if (!is_multiline && strncmp(last_line + 1, code, 3) == 0) {
+                break; // Single-line response complete
+            } else if (is_multiline && strncmp(last_line + 1, code, 3) == 0 && last_line[4] == ' ') {
+                break; // Multi-line response complete
+            }
+        }
     }
-    buffer[bytes_received] = '\0'; // Null-terminate the response
-    return bytes_received;
+
+    return total_bytes;
 }
+
 
 // Authenticate the user with the server
 int authenticate(int sockfd, char *user, char *password) {
