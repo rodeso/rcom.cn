@@ -23,7 +23,6 @@
 #define CYAN "\033[36m"
 #define WHITE "\033[37m"
 
-
 // URL format: ftp://[<user>:<password>@]<host>/<url-path>
 typedef struct URL {
     char user[MAX_LENGTH];      // Username for authentication
@@ -33,6 +32,7 @@ typedef struct URL {
     char file[MAX_LENGTH];      // Name of the file to download
     char ip[MAX_LENGTH];        // IP address of the server
 } URL;
+
 
 // Centralized error codes
 typedef enum {
@@ -44,6 +44,7 @@ typedef enum {
     ERR_FILE_SAVE_FAIL,
     ERR_PARSE_FAIL,
 } ErrorCode;
+
 
 // Error handling and messages
 void handle_error(ErrorCode code, const char *msg) {
@@ -64,6 +65,7 @@ void handle_error(ErrorCode code, const char *msg) {
 
     exit(code);
 }
+
 
 // Function to print parsed URL details
 void print_url_info(const URL *url) {
@@ -126,6 +128,7 @@ int parse_url(const char *input, URL *url) {
     return 0;
 }
 
+
 // Create a socket and connect to the serve
 int create_socket(char *ip, int port) {
     int sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -142,6 +145,7 @@ int create_socket(char *ip, int port) {
     }
     return sockfd;
 }
+
 
 // Read the server response
 int read_response(int sockfd, char *buffer, size_t buffer_size) {
@@ -199,14 +203,12 @@ int authenticate(int sockfd, char *user, char *password) {
         }
     }
 
-    // Step 2: Send USER command
     sprintf(buffer, "USER %s\r\n", user);
     if (send(sockfd, buffer, strlen(buffer), 0) < 0) {
         perror("send USER");
         return ERR_AUTH_FAIL;
     }
 
-    // Step 3: Read response to USER command
     int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received < 0) {
         perror("recv USER response");
@@ -242,10 +244,6 @@ int authenticate(int sockfd, char *user, char *password) {
 
     return ERR_SUCCESS;
 }
-
-
-
-
 
 // Enter passive mode and get the IP and port for data transfer
 int enter_passive_mode(int sockfd, char *ip, int *port) {
@@ -289,6 +287,7 @@ int request_file(int sockfd, char *resource) {
     printf(CYAN "Server response:\n" RESET "%s\n", buffer);
     return strstr(buffer, "150") ? ERR_SUCCESS : ERR_RETR_FAIL;
 }
+
 
 // Download the file from the server
 int download_file(int sockfd, char *file) {

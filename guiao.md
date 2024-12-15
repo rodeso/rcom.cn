@@ -140,5 +140,9 @@ make welcome
 
 make ubuntu
 
+make elisp
+
+make speedtest
+
 
 
