@@ -245,6 +245,7 @@ int authenticate(int sockfd, char *user, char *password) {
     return ERR_SUCCESS;
 }
 
+
 // Enter passive mode and get the IP and port for data transfer
 int enter_passive_mode(int sockfd, char *ip, int *port) {
     char buffer[MAX_LENGTH];
