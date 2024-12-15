@@ -143,7 +143,7 @@ Y = number of the group
 #### Steps
 
  - Connect E1 TUX3 and E1 TUX4 to the switch 
-     - gnuY3E1 and gnuY4E1 to any port 3 and 4 on the switch
+     - gnuY3E1 and gnuY4E1 to any port 3 and 4 on the switch (preferably 3 and 4)
  - Configure eth1interface of tuxY3 and eth1 interface of tuxY4 using ifconfig and route commands
      - ifconfig eth1 172.16.Y0.1/24 on tuxY3
      - ifconfig eth1 172.16.Y0.254/24 on tuxY4
@@ -255,7 +255,7 @@ Y = number of the group
      - configure eth2 of tuxY4
      ```bash
      ifconfig eth2 up
-     ifconfig eth2 172.16.51.253/24
+     ifconfig eth2 172.16.Y1.253/24
      ```
      - enable IP forwarding and disable ICMP
      ```bash
@@ -382,7 +382,12 @@ Y = number of the group
         /ip address add address=172.16.1.Y9/24 interface=ether1
         /ip address add address=172.16.Y1.254/24 interface=ether2
     ```
-    
+
+#### Questions
+
+### Experiment 5: DNS
+
+
 
 ## Theory
 

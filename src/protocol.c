@@ -84,7 +84,7 @@ int parse_url(const char *input, URL *url) {
     memset(url->password, 0, MAX_LENGTH);
 
     if (strncmp(input, "ftp://", 6) != 0) {
-        return -1;
+        handle_error(ERR_PARSE_FAIL, "Invalid URL format.");
     }
 
     const char *url_start = input + 6;
@@ -92,7 +92,7 @@ int parse_url(const char *input, URL *url) {
     const char *slash = strchr(url_start, '/');
 
     if (!slash) {
-        return -1;
+        handle_error(ERR_PARSE_FAIL, "Invalid URL format.");
     }
     if (at_sign && at_sign < slash) {
         const char *colon = strchr(url_start, ':');
@@ -119,7 +119,7 @@ int parse_url(const char *input, URL *url) {
 
     struct hostent *host_info = gethostbyname(url->host);
     if (!host_info) {
-        return -1;
+        handle_error(ERR_PARSE_FAIL, "Failed to resolve hostname.");
     }
     strcpy(url->ip, inet_ntoa(*(struct in_addr *)host_info->h_addr));
 
@@ -155,7 +155,7 @@ int read_response(int sockfd, char *buffer, size_t buffer_size) {
         int bytes_received = recv(sockfd, temp, sizeof(temp) - 1, 0);
         if (bytes_received < 0) {
             perror("recv");
-            return -1;
+            handle_error(ERR_SOCKET_FAIL, "Failed to read server response.");
         }
         temp[bytes_received] = '\0';
         strncat(buffer, temp, buffer_size - strlen(buffer) - 1);
@@ -295,8 +295,8 @@ int download_file(int sockfd, char *file) {
     FILE *fp = fopen(file, "wb");
     if (!fp) return ERR_FILE_SAVE_FAIL;
 
-    char buffer[1024];
-    int bytes_received;
+    char buffer[MAX_LENGTH];
+    ssize_t bytes_received;
     long total_bytes = 0;
 
     // Spinny
@@ -381,4 +381,3 @@ int main(int argc, char *argv[]) {
     printf(GREEN "File '%s' downloaded successfully.\n" RESET , url.file);
     return ERR_SUCCESS;
 }
-

@@ -87,3 +87,58 @@ mudar consola do switch para consola do router (MTIK)
 no tux2: route add default gw 172.16.121.254
 no tux3: route add default gw 172.16.120.254
 no tux4: route add default gw 172.16.121.254
+
+> /ip route add dst-address=172.16.120.0/24 gateway=172.16.121.253
+> /ip route add dst-address=0.0.0.0/0 gateway=172.16.1.254
+
+no tux3: 
+ping 172.16.110.254
+ping 172.16.111.1
+ping 172.16.111.254
+
+no tux2: 
+echo 0 > /proc/sys/net/ipv4/conf/eth0/accept_redirects
+echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
+
+remover rota pelo tux4 no tux2:
+route del -net 172.16.120.0 gw 172.16.121.253 netmask 255.255.255.0
+
+testar no tux2:
+ping 172.16.120.1 (nexthop)
+traceroute -n 172.16.120.1
+
+route add -net 172.16.120.0/24 gw 172.16.121.253
+traceroute -n 172.16.120.1
+
+echo 1 > /proc/sys/net/ipv4/conf/eth0/accept_redirects
+echo 1 > /proc/sys/net/ipv4/conf/all/accept_redirects
+
+no tux3:
+ping 172.16.1.10
+
+# 5- DNS
+
+adicionar ao ficheiro /etc/resolv.conf no tux2, tux3 e tux4:
+
+domain netlab.fe.up.pt
+search netlab.fe.up.pt
+nameserver 10.227.20.3
+nameserver 172.16.1.1
+
+testar:
+ping www.google.com
+
+# 6 correr o programa
+
+make clean
+
+make pipe
+
+make crab
+
+make welcome
+
+make ubuntu
+
+
+
