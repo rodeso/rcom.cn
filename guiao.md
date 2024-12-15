@@ -136,6 +136,10 @@ make pipe
 
 make crab
 
+make lr
+
+make parrot
+
 make welcome
 
 make ubuntu
@@ -144,5 +148,5 @@ make elisp
 
 make speedtest
 
-
+make rebex
 
