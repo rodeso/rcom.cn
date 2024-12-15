@@ -1,17 +1,16 @@
 #include <stdio.h>
+#include <netdb.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <netdb.h>
-#include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 
 // Constants
-#define MAX_LENGTH 512
 #define FTP_PORT 21
+#define MAX_LENGTH 512
 
 // ANSI color codes for colored output
 #define RESET "\033[0m"
