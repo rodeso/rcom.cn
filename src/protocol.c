@@ -68,6 +68,7 @@ void handle_error(ErrorCode code, const char *msg) {
 
 // Function to print parsed URL details
 void print_url_info(const URL *url) {
+    printf("\n");
     printf(CYAN "URL Details:\n" RESET);
     printf("User: " GREEN "%s\n" RESET, url->user);
     printf("Password: " GREEN "%s\n" RESET, url->password);
@@ -268,6 +269,8 @@ int enter_passive_mode(int sockfd, char *ip, int *port) {
             if (sscanf(buffer, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)", &h1, &h2, &h3, &h4, &p1, &p2) == 6) {
                 sprintf(ip, "%d.%d.%d.%d", h1, h2, h3, h4);
                 *port = (p1 * 256) + p2;
+                printf(CYAN "Passive Mode Port:\n" RESET "%d\n", (p1 * 256) + p2);
+                printf("\n");
                 return ERR_SUCCESS;
             } else {
                 fprintf(stderr, "Failed to parse PASV response: %s\n", buffer);
