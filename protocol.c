@@ -13,6 +13,17 @@
 #define MAX_LENGTH 512
 #define FTP_PORT 21
 
+// ANSI color codes for colored output
+#define RESET "\033[0m"
+#define RED "\033[31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN "\033[36m"
+#define WHITE "\033[37m"
+
+
 // URL format: ftp://[<user>:<password>@]<host>/<url-path>
 typedef struct URL {
     char user[MAX_LENGTH];      // Username for authentication
@@ -34,6 +45,17 @@ typedef enum {
     ERR_PARSE_FAIL,
 } ErrorCode;
 
+// Function to print parsed URL details
+void print_url_info(const URL *url) {
+    printf(CYAN "URL Details:\n" RESET);
+    printf("    User: " GREEN "%s\n" RESET, url->user);
+    printf("    Password: " GREEN "%s\n" RESET, url->password);
+    printf("    Host: " YELLOW "%s\n" RESET, url->host);
+    printf("    Resource Path: " BLUE "%s\n" RESET, url->resource);
+    printf("    File Name: " MAGENTA "%s\n" RESET, url->file);
+    printf("    Server IP: " WHITE "%s\n" RESET, url->ip);
+}
+
 // Enhanced error handling and messages
 void handle_error(ErrorCode code, const char *msg) {
     // Error messages corresponding to ErrorCode
@@ -48,9 +70,9 @@ void handle_error(ErrorCode code, const char *msg) {
     };
 
     // Print the error code and message
-    fprintf(stderr, "Error [%d]: %s\n", code, error_messages[code]);
+    fprintf(stderr, RED "Error [%d]: %s\n" RESET, code, error_messages[code]);
     if (msg) {
-        fprintf(stderr, "Details: %s\n", msg);
+        fprintf(stderr, "Details: " YELLOW "%s\n" RESET, msg);
     }
 
     // Clean up or exit if necessary
@@ -117,16 +139,6 @@ int parse_url(const char *input, URL *url) {
     strcpy(url->ip, inet_ntoa(*(struct in_addr *)host_info->h_addr));
 
     return 0; // Success
-}
-
-// Function to print parsed URL details
-void print_url_info(const URL* url) {
-    printf("User: %s\n", url->user);
-    printf("Password: %s\n", url->password);
-    printf("Host: %s\n", url->host);
-    printf("Resource Path: %s\n", url->resource);
-    printf("File Name: %s\n", url->file);
-    printf("Server IP: %s\n", url->ip);
 }
 
 // Create a socket and connect to the serve
@@ -196,13 +208,20 @@ int authenticate(int sockfd, char *user, char *password) {
     char buffer[MAX_LENGTH];
 
     // Step 1: Read and discard the initial welcome message
-    int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes_received < 0) {
-        perror("recv welcome message");
-        return ERR_AUTH_FAIL;
+    while (1) {
+        int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+        if (bytes_received < 0) {
+            perror("recv welcome message");
+            return ERR_AUTH_FAIL;
+        }
+        buffer[bytes_received] = '\0'; // Null-terminate the response
+        printf("Welcome Message: %s\n", buffer);
+
+        // Break when the last line of the welcome message is received
+        if (strstr(buffer, "220 ") != NULL) {
+            break;
+        }
     }
-    buffer[bytes_received] = '\0'; // Null-terminate the response
-    printf("Welcome Message: %s\n", buffer);
 
     // Step 2: Send USER command
     sprintf(buffer, "USER %s\r\n", user);
@@ -212,7 +231,7 @@ int authenticate(int sockfd, char *user, char *password) {
     }
 
     // Step 3: Read response to USER command
-    bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+    int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received < 0) {
         perror("recv USER response");
         return ERR_AUTH_FAIL;
@@ -254,20 +273,46 @@ int authenticate(int sockfd, char *user, char *password) {
 
 
 
+
 // Enter passive mode and get the IP and port for data transfer
 int enter_passive_mode(int sockfd, char *ip, int *port) {
     char buffer[MAX_LENGTH];
-    send(sockfd, "PASV\r\n", 6, 0);
-    recv(sockfd, buffer, sizeof(buffer), 0);
 
-    int h1, h2, h3, h4, p1, p2;
-    if (sscanf(buffer, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)", &h1, &h2, &h3, &h4, &p1, &p2) == 6) {
-        sprintf(ip, "%d.%d.%d.%d", h1, h2, h3, h4);
-        *port = p1 * 256 + p2;
-        return ERR_SUCCESS;
+    // Step 1: Send PASV command
+    if (send(sockfd, "PASV\r\n", strlen("PASV\r\n"), 0) < 0) {
+        perror("send PASV");
+        return ERR_PASV_FAIL;
     }
-    return ERR_PASV_FAIL;
+
+    // Step 2: Read the server's response
+    while (1) {
+        int bytes_received = recv(sockfd, buffer, sizeof(buffer) - 1, 0);
+        if (bytes_received < 0) {
+            perror("recv PASV response");
+            return ERR_PASV_FAIL;
+        }
+        buffer[bytes_received] = '\0'; // Null-terminate the response
+        printf("PASV Response: %s\n", buffer);
+
+        // Step 3: Look for the 227 response (Enter Passive Mode)
+        if (strstr(buffer, "227") != NULL) {
+            // Parse the response to extract IP and port
+            int h1, h2, h3, h4, p1, p2;
+            if (sscanf(buffer, "227 Entering Passive Mode (%d,%d,%d,%d,%d,%d)",
+                       &h1, &h2, &h3, &h4, &p1, &p2) == 6) {
+                sprintf(ip, "%d.%d.%d.%d", h1, h2, h3, h4);
+                *port = (p1 * 256) + p2;
+                return ERR_SUCCESS; // Success
+            } else {
+                fprintf(stderr, "Failed to parse PASV response: %s\n", buffer);
+                return ERR_PASV_FAIL; // Parsing error
+            }
+        }
+
+        // If the response is not 227, continue reading (handle multi-line responses)
+    }
 }
+
 
 // Request the file from the server
 int request_file(int sockfd, char *resource) {
