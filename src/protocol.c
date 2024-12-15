@@ -285,7 +285,7 @@ int request_file(int sockfd, char *resource) {
     send(sockfd, buffer, strlen(buffer), 0);
     recv(sockfd, buffer, sizeof(buffer), 0);
     printf(CYAN "Server response:\n" RESET "%s\n", buffer);
-    return strstr(buffer, "150") ? ERR_SUCCESS : ERR_RETR_FAIL;
+    return strstr(buffer, "150") || strstr(buffer, "125") ? ERR_SUCCESS : ERR_RETR_FAIL;
 }
 
 
