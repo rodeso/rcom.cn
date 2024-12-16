@@ -116,6 +116,12 @@ echo 1 > /proc/sys/net/ipv4/conf/all/accept_redirects
 no tux3:
 ping 172.16.1.10
 
+desativação do NAT
+> /ip firewall nat disable 0
+
+ativação do NAT
+> /ip firewall nat enable 0
+
 # 5- DNS
 
 adicionar ao ficheiro /etc/resolv.conf no tux2, tux3 e tux4:
