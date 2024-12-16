@@ -84,9 +84,9 @@ mudar consola do switch para consola do router (MTIK)
 >/ip address add address=172.16.1.129/24 interface=ether1
 >/ip address add address=172.16.121.254/24 interface=ether2
 
-no tux2: route add default gw 172.16.121.254
-no tux3: route add default gw 172.16.120.254
-no tux4: route add default gw 172.16.121.254
+no tux2: route add -net 172.16.1.0/24 gw 172.16.121.254
+no tux3: route add -net 172.16.1.0/24 gw 172.16.120.254
+no tux4: route add -net 172.16.1.0/24 gw 172.16.121.254
 
 > /ip route add dst-address=172.16.120.0/24 gateway=172.16.121.253
 > /ip route add dst-address=0.0.0.0/0 gateway=172.16.1.254
@@ -107,8 +107,15 @@ testar no tux2:
 ping 172.16.120.1 (nexthop)
 traceroute -n 172.16.120.1
 
-route add -net 172.16.120.0/24 gw 172.16.121.253
+route add -net 172.16.120.0/24 gw 172.16.121.254
 traceroute -n 172.16.120.1
+ping 172.16.120.1
+
+
+sudo ip route del 172.16.120.0 via 172.16.121.254 ou route del -net 172.16.120.0 gw 172.16.121.254 netmask 255.255.255.0
+route add -net 172.16.120.0/24 gw 172.16.121.253
+
+
 
 echo 1 > /proc/sys/net/ipv4/conf/eth0/accept_redirects
 echo 1 > /proc/sys/net/ipv4/conf/all/accept_redirects
