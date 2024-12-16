@@ -92,9 +92,9 @@ no tux4: route add default gw 172.16.121.254
 > /ip route add dst-address=0.0.0.0/0 gateway=172.16.1.254
 
 no tux3: 
-ping 172.16.110.254
-ping 172.16.111.1
-ping 172.16.111.254
+ping 172.16.120.254
+ping 172.16.121.1
+ping 172.16.121.254
 
 no tux2: 
 echo 0 > /proc/sys/net/ipv4/conf/eth0/accept_redirects
