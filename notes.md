@@ -387,6 +387,16 @@ Y = number of the group
 
 ### Experiment 5: DNS
 
+#### Steps
+ - Configure DNS at tuxY3, tuxY4, tuxY2 (use DNS server services.netlab.fe.up.pt (10.227.20.3))
+ - Verify if names can be used in these hosts (e.g., ping hostname, use browser)
+ - Execute ping (new-hostname-in-the-Internet); observe DNS related packets in Wireshark
+
+#### Questions
+» How to configure the DNS service in a host?
+» What packets are exchanged by DNS and what information is transported
+
+### Experiment 6: TCP connections
 
 
 ## Theory
